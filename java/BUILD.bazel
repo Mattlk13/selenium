@@ -1,7 +1,8 @@
-load("//java:maven.bzl", "maven_jars")
+load("@rules_jvm_external//:defs.bzl", "artifact")
 
 exports_files(
     srcs = [
+        "CHANGELOG",
         "empty_test_template.txt",
         "java_stub_template.txt",
     ],
@@ -10,19 +11,27 @@ exports_files(
     ],
 )
 
+java_plugin(
+    name = "auto-service-plugin",
+    processor_class = "com.google.auto.service.processor.AutoServiceProcessor",
+    visibility = ["//visibility:private"],
+    deps = [
+        artifact("com.google.auto:auto-common"),
+        artifact("com.google.auto.service:auto-service"),
+        artifact("com.google.guava:guava"),
+    ],
+)
 
-maven_jars(
-    name = "release-jars",
-    targets = [
-        "//java/client/src/org/openqa/selenium:core",
-        "//java/client/src/org/openqa/selenium/chrome",
-        "//java/client/src/org/openqa/selenium/edge:edgeium",
-        "//java/client/src/org/openqa/selenium/edge/edgehtml",
-        "//java/client/src/org/openqa/selenium/firefox",
-        "//java/client/src/org/openqa/selenium/firefox/xpi",
-        "//java/client/src/org/openqa/selenium/ie",
-        "//java/client/src/org/openqa/selenium/opera",
-        "//java/client/src/org/openqa/selenium/safari",
-        "//java/client/src/org/openqa/selenium/remote",
+java_library(
+    name = "auto-service",
+    exported_plugins = [
+        ":auto-service-plugin",
+    ],
+    visibility = [
+        "//java:__subpackages__",
+    ],
+    exports = [
+        artifact("com.google.auto.service:auto-service"),
+        artifact("com.google.auto.service:auto-service-annotations"),
     ],
 )

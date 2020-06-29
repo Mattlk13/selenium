@@ -42,11 +42,8 @@ def testSelectByIndexSingle(driver, pages):
             assert sel.first_selected_option.text == select['values'][x]
 
 
-@pytest.mark.xfail_chrome
-@pytest.mark.xfail_chromiumedge
-@pytest.mark.xfail_firefox
+@pytest.mark.xfail_firefox(reason='https://bugzilla.mozilla.org/show_bug.cgi?id=1429403')
 @pytest.mark.xfail_remote
-@pytest.mark.xfail_marionette(reason='https://bugzilla.mozilla.org/show_bug.cgi?id=1429403')
 def testSelectDisabledByIndex(driver, pages):
     pages.load("formPage.html")
     sel = Select(driver.find_element(By.NAME, disabledSelect['name']))
@@ -69,11 +66,8 @@ def testSelectByValueSingle(driver, pages):
             assert sel.first_selected_option.text == select['values'][x]
 
 
-@pytest.mark.xfail_chrome
-@pytest.mark.xfail_chromiumedge
-@pytest.mark.xfail_firefox
+@pytest.mark.xfail_firefox(reason='https://bugzilla.mozilla.org/show_bug.cgi?id=1429403')
 @pytest.mark.xfail_remote
-@pytest.mark.xfail_marionette(reason='https://bugzilla.mozilla.org/show_bug.cgi?id=1429403')
 def testSelectDisabledByValue(driver, pages):
     pages.load("formPage.html")
     sel = Select(driver.find_element(By.NAME, disabledSelect['name']))
@@ -101,6 +95,7 @@ def testSelectByVisibleTextSingle(driver, pages):
     reason='https://bugs.chromium.org/p/chromedriver/issues/detail?id=822')
 @pytest.mark.xfail_chromiumedge(
     reason='https://bugs.chromium.org/p/chromedriver/issues/detail?id=822')
+@pytest.mark.xfail_safari
 def testSelectByVisibleTextShouldNormalizeSpaces(driver, pages):
     pages.load("formPage.html")
 
@@ -112,11 +107,8 @@ def testSelectByVisibleTextShouldNormalizeSpaces(driver, pages):
             assert sel.first_selected_option.text == select['values'][x]
 
 
-@pytest.mark.xfail_chrome
-@pytest.mark.xfail_chromiumedge
-@pytest.mark.xfail_firefox
+@pytest.mark.xfail_firefox(reason='https://bugzilla.mozilla.org/show_bug.cgi?id=1429403')
 @pytest.mark.xfail_remote
-@pytest.mark.xfail_marionette(reason='https://bugzilla.mozilla.org/show_bug.cgi?id=1429403')
 def testSelectDisabledByVisibleText(driver, pages):
     pages.load("formPage.html")
     sel = Select(driver.find_element(By.NAME, disabledSelect['name']))

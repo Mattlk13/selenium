@@ -35,9 +35,9 @@ module Selenium
         # @api private
         #
 
-        def initialize(http_client: nil, url: nil)
-          uri = url.is_a?(URI) ? url : URI.parse(url || "http://#{Platform.localhost}:#{PORT}/wd/hub")
-          uri.path += '/' unless %r{\/$}.match?(uri.path)
+        def initialize(http_client: nil, url:)
+          uri = url.is_a?(URI) ? url : URI.parse(url)
+          uri.path += '/' unless uri.path.end_with?('/')
 
           @http = http_client || Http::Default.new
           @http.server_url = uri
@@ -48,8 +48,8 @@ module Selenium
         # Creates session.
         #
 
-        def create_session(desired_capabilities, options = nil)
-          response = execute(:new_session, {}, merged_capabilities(desired_capabilities, options))
+        def create_session(capabilities)
+          response = execute(:new_session, {}, {capabilities: {firstMatch: [capabilities]}})
 
           @session_id = response['sessionId']
           capabilities = response['capabilities']
@@ -512,23 +512,28 @@ module Selenium
         alias_method :switch_to_active_element, :active_element
 
         def find_element_by(how, what, parent = nil)
-          how, what = convert_locators(how, what)
+          how, what = convert_locator(how, what)
+
+          return execute_atom(:findElements, Support::RelativeLocator.new(what).as_json).first if how == 'relative'
 
           id = if parent
-                 execute :find_child_element, {id: parent}, {using: how, value: what}
+                 execute :find_child_element, {id: parent}, {using: how, value: what.to_s}
                else
-                 execute :find_element, {}, {using: how, value: what}
+                 execute :find_element, {}, {using: how, value: what.to_s}
                end
+
           Element.new self, element_id_from(id)
         end
 
         def find_elements_by(how, what, parent = nil)
-          how, what = convert_locators(how, what)
+          how, what = convert_locator(how, what)
+
+          return execute_atom :findElements, Support::RelativeLocator.new(what).as_json if how == 'relative'
 
           ids = if parent
-                  execute :find_child_elements, {id: parent}, {using: how, value: what}
+                  execute :find_child_elements, {id: parent}, {using: how, value: what.to_s}
                 else
-                  execute :find_elements, {}, {using: how, value: what}
+                  execute :find_elements, {}, {using: how, value: what.to_s}
                 end
 
           ids.map { |id| Element.new self, element_id_from(id) }
@@ -566,16 +571,6 @@ module Selenium
           COMMANDS[command]
         end
 
-        def merged_capabilities(capabilities, options = nil)
-          capabilities.merge!(options.as_json) if options
-
-          {
-            capabilities: {
-              firstMatch: [capabilities]
-            }
-          }
-        end
-
         def unwrap_script_result(arg)
           case arg
           when Array
@@ -594,20 +589,30 @@ module Selenium
           id['ELEMENT'] || id['element-6066-11e4-a52e-4f735466cecf']
         end
 
-        def convert_locators(how, what)
+        def convert_locator(how, what)
+          how = SearchContext::FINDERS[how.to_sym] || how
+
           case how
           when 'class name'
             how = 'css selector'
-            what = ".#{escape_css(what)}"
+            what = ".#{escape_css(what.to_s)}"
           when 'id'
             how = 'css selector'
-            what = "##{escape_css(what)}"
+            what = "##{escape_css(what.to_s)}"
           when 'name'
             how = 'css selector'
-            what = "*[name='#{escape_css(what)}']"
+            what = "*[name='#{escape_css(what.to_s)}']"
           when 'tag name'
             how = 'css selector'
           end
+
+          if what.is_a?(Hash)
+            what = what.each_with_object({}) do |(h, w), hash|
+              h, w = convert_locator(h.to_s, w)
+              hash[h] = w
+            end
+          end
+
           [how, what]
         end
 
